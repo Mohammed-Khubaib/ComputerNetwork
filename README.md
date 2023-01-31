@@ -11,4 +11,4 @@
     1. **[connection oriented socket system calls](https://github.com/Mohammed-Khubaib/ComputerNetwork/tree/main/Implementation%20of%20concurrent%20echo%20server%20using%20connection%20oriented%20socket%20system%20calls)**
     2. **[connectionless socket system calls](https://github.com/Mohammed-Khubaib/ComputerNetwork/tree/main/Implementation%20of%20concurrent%20echo%20server%20using%20connectionless%20socket%20system%20calls)**
 5. **Implement RIP Routing Protocol using packet tracer**
-    1. **[RIP Routing Protocol](https://github.com/Mohammed-Khubaib/ComputerNetwork/tree/main/RIP)**
+    1. **[RIP Routing Protocol with 3 Routers](https://github.com/Mohammed-Khubaib/ComputerNetwork/tree/main/RIP)**
