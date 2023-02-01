@@ -2,85 +2,83 @@
     - Server:
         
         ```c
-        // (b) Implementation of concurrent echo server using connection oriented socket
-        // system calls
-        // Server Program :
         #include <stdio.h>
+        #include <stdlib.h>
+        #include <unistd.h>
+        #include <string.h>
         #include <sys/types.h>
         #include <sys/socket.h>
         #include <netinet/in.h>
         #include <arpa/inet.h>
-        #include <stdlib.h>
-        #include <string.h>
-        #include <unistd.h>
-        #define SRV_TCP_PORT 8888
+
+        #define PORT 6666
         #define MAX_MSG 100
-        void errExit(char *str)
-        {
-            puts(str);
-            exit(0);
-        }
+
         int main()
         {
-            int sockFd, newSockFd;
-            struct sockaddr_in srvAdr, cliAdr;
-            int cliLen, n;
-            char mesg[MAX_MSG];
-            int pid;
-            if ((sockFd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+            int sock, newSock, pid, n;
+            struct sockaddr_in serverAddress, clientAddress;
+            int sock_len = sizeof(struct sockaddr_in);
+            char data[MAX_MSG];
+
+            sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0)
             {
-                errExit("can't open stream socket \n");
+                perror("[-] socket not created\n");
+                exit(-1);
             }
-            memset(&srvAdr, 0, sizeof(srvAdr));
-            srvAdr.sin_family = AF_INET;
-            srvAdr.sin_addr.s_addr = htonl(INADDR_ANY);
-            srvAdr.sin_port = htons(SRV_TCP_PORT);
-            if (bind(sockFd, (struct sockaddr *)&srvAdr, sizeof(srvAdr)) < 0)
+            printf("[+] Socket Created\n");
+            memset(&serverAddress, 0, sock_len);
+            serverAddress.sin_family = AF_INET;
+            serverAddress.sin_port = htons(PORT);
+            serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+
+            if ((bind(sock, (struct sockaddr *)&serverAddress, sock_len)) < 0)
             {
-                errExit("Can't bind local address \n");
+                perror("[-]Binding Failed\n");
             }
-            listen(sockFd, 5);
+            printf("[+] Bining Successful\n");
+
+            if (listen(sock, 3))
+            {
+                perror("[-] not listening");
+                exit(-1);
+            }
+            printf("[+] Listening\n");
+
             while (1)
             {
-                printf("server waiting for new connection :\n");
-                cliLen = sizeof(cliAdr);
-                newSockFd = accept(sockFd, (struct sockaddr *)&cliAdr, &cliLen);
-                if (newSockFd < 0)
+                newSock = accept(sock, (struct sockaddr *)&clientAddress, &sock_len);
+                if (newSock < 0)
                 {
-                    errExit("accept error \n");
+                    perror("[-] connection not Accepted\n");
+                    exit(-1);
                 }
-                printf("connected to client :%s \n", inet_ntoa(cliAdr.sin_addr));
+                printf("[+] connection Accepted\n");
+                printf("New Client Connected\nPort No: %d\nIp: %s\n", ntohs(clientAddress.sin_port), inet_ntoa(clientAddress.sin_addr));
                 pid = fork();
                 printf("parent\n");
                 if (pid == 0) /*** child process ***/
                 {
-                    printf("child");
+                    printf("child\n");
                     while (1)
                     {
-                        n = recv(newSockFd, mesg, MAX_MSG, 0);
+                        n = recv(newSock, data, MAX_MSG, 0);
                         if (n < 0)
                         {
-                            errExit("recv error \n");
+                            perror("recv error \n");
                         }
                         if (n == 0)
                         {
                             break;
                         }
-                        mesg[n] = 0;
-                        if (write(newSockFd, mesg, n) != n)
-                        {
-                            errExit("send error \n");
-                        }
-                        printf("Received and sent following message :\n%s\n", mesg);
+                        send(newSock, data, n, 0);
+                        data[n] = '\0';
+                        printf("Sent Message : %s\n", data);
                     }
-                    exit(0);
-                }
-                else /*** Parent process ***/
-                {
-                    close(newSockFd);
                 }
             }
-            printf("parent");
+            return 0;
         }
         ```
         
@@ -96,53 +94,54 @@
         #include <stdlib.h>
         #include <string.h>
         #include <unistd.h>
-        #define SRV_IP_ADRS "127.0.0.1"
-        #define SRV_TCP_PORT 8888
+        #define IP_ADRS "127.0.0.1"
+        #define PORT 6666
         #define MAX_MSG 100
-        void errExit(char *str)
-        {
-            puts(str);
-            exit(0);
-        }
-        int main()
-        {
-            int sockFd;
-            struct sockaddr_in srvAdr;
+
+        int main(){
+            int sock,n;
+            struct sockaddr_in serverAddress;
             char txmsg[MAX_MSG];
             char rxmsg[MAX_MSG];
-            int n;
-            if ((sockFd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-            {
-                errExit("can't open stream socket \n");
+            sock = socket(AF_INET,SOCK_STREAM,0);
+            if(sock<0){
+                perror("[-]Socket not Opened\n");
+                exit(-1);
             }
-            memset(&srvAdr, 0, sizeof(srvAdr));
-            srvAdr.sin_family = AF_INET;
-            srvAdr.sin_addr.s_addr = inet_addr(SRV_IP_ADRS);
-            srvAdr.sin_port = htons(SRV_TCP_PORT);
-            if (connect(sockFd, (struct sockaddr *)&srvAdr, sizeof(srvAdr)) < 0)
-            {
-                errExit("can't connect to server \n");
+            printf("[+] Socket Opened\n");
+            memset(&serverAddress,0,sizeof(serverAddress));
+            serverAddress.sin_family=AF_INET;
+            serverAddress.sin_port=htons(PORT);
+            serverAddress.sin_addr.s_addr=inet_addr(IP_ADRS);
+            if(connect(sock,(struct sockaddr *)&serverAddress,sizeof(serverAddress))<0){
+                perror("[-] connection failed\n");
+                exit(-1);
             }
+            printf("[+] connection successful\n");
             while (1)
             {
                 printf("Enter message to send ,Enter # to exit :\n");
                 fgets(txmsg, MAX_MSG, stdin);
-                if (txmsg[0] == '#')
+                    if (txmsg[0] == '#')
+                    {
+                        break;
+                    }
+                    n = strlen(txmsg) + 1;
+                if (send(sock, txmsg, n, 0) != n)
                 {
-                    break;
+                    perror("send error \n");
+                    exit(-1);
                 }
-                n = strlen(txmsg) + 1;
-                if (send(sockFd, txmsg, n, 0) != n)
-                {
-                    errExit("send error \n");
-                }
-                n = recv(sockFd, rxmsg, MAX_MSG, 0);
+                n = recv(sock, rxmsg, MAX_MSG, 0);
                 if (n < 0)
                 {
-                    errExit("recv error \n");
+                    perror("recv error \n");
+                    exit(-1);
                 }
-                printf("Received following message : \n %s \n", rxmsg);
+                printf("Received following message :\n%s\n", rxmsg);
             }
-            close(sockFd);
+            
+
+            return 0;
         }
         ```
